@@ -1,0 +1,50 @@
+{
+  "name": "crypto-dataset",
+  "source": "Binance public klines via Signal Harvester",
+  "provider": "binance",
+  "timezone": "UTC",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "XRPUSDT",
+    "TRXUSDT",
+    "DOGEUSDT",
+    "ZECUSDT",
+    "ADAUSDT",
+    "BCHUSDT"
+  ],
+  "intervals": [
+    "1m",
+    "5m",
+    "15m",
+    "1h",
+    "4h",
+    "1d",
+    "1w",
+    "1mo"
+  ],
+  "cutoff_utc_exclusive": "2026-05-20T00:00:00Z",
+  "last_complete_day_utc": "2026-05-19",
+  "symbol_start_times": {
+    "ADAUSDT": "2018-04-17T04:02:00Z",
+    "BCHUSDT": "2019-11-28T10:00:00Z",
+    "BNBUSDT": "2017-11-06T03:54:00Z",
+    "BTCUSDT": "2017-08-17T04:00:00Z",
+    "DOGEUSDT": "2019-07-05T12:00:00Z",
+    "ETHUSDT": "2017-08-17T04:00:00Z",
+    "SOLUSDT": "2020-08-11T06:00:00Z",
+    "TRXUSDT": "2018-06-11T11:30:00Z",
+    "XRPUSDT": "2018-05-04T08:11:00Z",
+    "ZECUSDT": "2019-03-21T04:00:00Z"
+  },
+  "generated_at": "2026-05-20T08:40:04.983534Z",
+  "layout": "data/interval_id=<interval>/symbol_id=<symbol>/year=<YYYY>/month=<MM>/<symbol>-<interval>-<YYYY>-<MM>.parquet",
+  "notes": [
+    "All timestamps are candle open times in UTC.",
+    "Higher intervals are rolled up from 1m candles using UTC boundaries.",
+    "Weekly candles start on Monday UTC.",
+    "source_rows records the number of 1m rows used in each candle."
+  ]
+}

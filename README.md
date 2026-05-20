@@ -1,0 +1,97 @@
+# Crypto Dataset
+
+A public, research-friendly OHLCV crypto candle dataset built from Binance public 1-minute market data.
+
+## Symbols
+
+`BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `BNBUSDT`, `XRPUSDT`, `TRXUSDT`, `DOGEUSDT`, `ZECUSDT`, `ADAUSDT`, `BCHUSDT`
+
+## Intervals
+
+`1m`, `5m`, `15m`, `1h`, `4h`, `1d`, `1w`, `1mo`
+
+All candles use **UTC** boundaries. The weekly interval starts on Monday UTC. Monthly candles use calendar months UTC.
+
+## Layout
+
+```text
+data/
+  interval_id=1m/
+    symbol_id=BTCUSDT/
+      year=2026/
+        month=05/
+          BTCUSDT-1m-2026-05.parquet
+metadata/
+  manifest.json
+```
+
+Parquet files are partitioned by interval, symbol, year, and month. Aggregated candles include a `source_rows` column showing how many 1-minute rows were used.
+
+## Columns
+
+- `symbol`
+- `interval`
+- `timestamp` — candle open time in UTC
+- `open`
+- `high`
+- `low`
+- `close`
+- `volume`
+- `source_rows` — `1` for 1m rows; number of 1m candles rolled up for higher intervals
+
+## Reading the data
+
+Install dependencies:
+
+```bash
+python -m pip install pyarrow pandas
+```
+
+Read one Parquet file:
+
+```python
+import pandas as pd
+
+path = "data/interval_id=1h/symbol_id=BTCUSDT/year=2026/month=05/BTCUSDT-1h-2026-05.parquet"
+df = pd.read_parquet(path)
+print(df.head())
+```
+
+Read a full symbol/interval directory:
+
+```python
+import pyarrow.dataset as ds
+
+candles = ds.dataset("data/interval_id=1h/symbol_id=BTCUSDT", format="parquet", partitioning="hive")
+df = candles.to_table().to_pandas().sort_values("timestamp")
+print(df.tail())
+```
+
+Export back to CSV:
+
+```python
+df.to_csv("BTCUSDT-1h.csv", index=False)
+```
+
+## Updating
+
+The dataset is generated, not hand-written. Use:
+
+```bash
+python scripts/build_dataset.py --publish-latest-day
+```
+
+That command detects the latest complete UTC day available in Signal Harvester, regenerates the affected partitions, updates `metadata/manifest.json`, commits, and pushes if there are changes.
+
+For a full rebuild:
+
+```bash
+python scripts/build_dataset.py --full --cutoff-utc 2026-05-20T00:00:00Z
+```
+
+## Licensing
+
+- Code/scripts: MIT (`LICENSE`)
+- Data: CC0/public domain dedication (`DATA_LICENSE`)
+
+Source data comes from Binance public market-data endpoints. This repository is not affiliated with Binance.
