@@ -95,3 +95,38 @@ python scripts/build_dataset.py --full --cutoff-utc 2026-05-20T00:00:00Z
 - Data: CC0/public domain dedication (`DATA_LICENSE`)
 
 Source data comes from Binance public market-data endpoints. This repository is not affiliated with Binance.
+
+## News and macro sentiment
+
+The repository also contains metadata-only sentiment datasets generated from
+public RSS feeds. Signal Harvester privately retains feed-provided text until
+FinBERT processing succeeds, then deletes that text. Article bodies and feed
+summaries are never exported to Git.
+
+Tracked assets are `BTC`, `ETH`, `SOL`, `BNB`, `XRP`, `TRX`, `DOGE`, `ZEC`,
+`ADA`, `BCH`, `GENERAL_CRYPTO`, and `GENERAL_MACRO`. One document may contribute
+to every relevant asset.
+
+```text
+sentiment/
+  source_type=news|public_discussion|macro/
+    asset=BTC/
+      year=2026/month=06/day=18/sentiment.parquet
+sentiment_daily/
+  source_type=news|public_discussion|macro/
+    asset=BTC/
+      year=2026/month=06/daily.parquet
+```
+
+Per-document rows include headline and URL metadata, asset relevance, FinBERT
+probabilities and score, the optional lexicon baseline, model version, and an
+input hash. Daily rows contain relevance-weighted aggregates and sample sizes.
+
+Run processing and export manually with:
+
+```bash
+python scripts/build_sentiment_dataset.py --process --export
+```
+
+The scheduled publisher uses `--publish`, which processes pending documents,
+deletes temporary private content, rebuilds partitions, commits, and pushes.

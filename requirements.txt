@@ -1,2 +1,4 @@
 pyarrow>=24.0.0
 psycopg[binary]>=3.3.0
+torch>=2.7.0
+transformers>=4.52.0
