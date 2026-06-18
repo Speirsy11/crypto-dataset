@@ -164,7 +164,9 @@ def process_pending(limit: int | None = None) -> int:
                 AND s.model_name = %s
                 AND s.model_version = %s
             )
-            ORDER BY COALESCE(d.published_at, d.collected_at), d.id
+            ORDER BY (d.private_content IS NOT NULL) DESC,
+                     COALESCE(d.published_at, d.collected_at) DESC,
+                     d.id
             {limit_sql}
             """,
             params,
