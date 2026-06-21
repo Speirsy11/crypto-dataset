@@ -25,8 +25,8 @@
     "1w",
     "1mo"
   ],
-  "cutoff_utc_exclusive": "2026-06-19T00:00:00Z",
-  "last_complete_day_utc": "2026-06-18",
+  "cutoff_utc_exclusive": "2026-06-20T00:00:00Z",
+  "last_complete_day_utc": "2026-06-19",
   "symbol_start_times": {
     "ADAUSDT": "2018-04-17T04:02:00Z",
     "BCHUSDT": "2019-11-28T10:00:00Z",
@@ -39,7 +39,7 @@
     "XRPUSDT": "2018-05-04T08:11:00Z",
     "ZECUSDT": "2019-03-21T04:00:00Z"
   },
-  "generated_at": "2026-06-19T02:03:27.450630Z",
+  "generated_at": "2026-06-21T00:52:23.225194Z",
   "layout": "data/interval_id=<interval>/symbol_id=<symbol>/year=<YYYY>/month=<MM>/<symbol>-<interval>-<YYYY>-<MM>.parquet",
   "notes": [
     "All timestamps are candle open times in UTC.",
