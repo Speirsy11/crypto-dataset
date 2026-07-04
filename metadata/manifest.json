@@ -39,7 +39,7 @@
     "XRPUSDT": "2018-05-04T08:11:00Z",
     "ZECUSDT": "2019-03-21T04:00:00Z"
   },
-  "generated_at": "2026-07-04T00:21:47.327598Z",
+  "generated_at": "2026-07-04T00:21:49.979300Z",
   "layout": "data/interval_id=<interval>/symbol_id=<symbol>/year=<YYYY>/month=<MM>/<symbol>-<interval>-<YYYY>-<MM>.parquet",
   "notes": [
     "All timestamps are candle open times in UTC.",
