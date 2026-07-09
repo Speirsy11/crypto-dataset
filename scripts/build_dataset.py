@@ -114,32 +114,40 @@ def write_table(path: Path, table: pa.Table) -> bool:
 
 
 def fetch_symbol_bounds(conn) -> dict[str, datetime]:
+    # Query each symbol individually to leverage the (provider, symbol, interval, timestamp)
+    # index efficiently — GROUP BY symbol with ANY() forces a full index scan.
+    bounds: dict[str, datetime] = {}
     with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-        cur.execute(
-            """
-            SELECT symbol, min(timestamp) AS start_time
-            FROM market_data_points
-            WHERE provider = %s AND interval = '1m' AND symbol = ANY(%s)
-            GROUP BY symbol
-            """,
-            (PROVIDER, SYMBOLS),
-        )
-        return {row["symbol"]: row["start_time"].astimezone(timezone.utc) for row in cur.fetchall()}
+        for symbol in SYMBOLS:
+            cur.execute(
+                """
+                SELECT min(timestamp) AS start_time
+                FROM market_data_points
+                WHERE provider = %s AND interval = '1m' AND symbol = %s
+                """,
+                (PROVIDER, symbol),
+            )
+            row = cur.fetchone()
+            if row and row["start_time"]:
+                bounds[symbol] = row["start_time"].astimezone(timezone.utc)
+    return bounds
 
 
 def latest_complete_day(conn) -> datetime:
     with conn.cursor() as cur:
+        # PostgreSQL cannot do an index skip-scan, so a GROUP BY symbol forces
+        # a full index scan of all matching rows (millions).  Querying each
+        # symbol individually uses the (provider, symbol, interval, timestamp DESC)
+        # index to find the max in O(1) index seeks instead.
+        union_sql = " UNION ALL ".join(
+            f"SELECT max(timestamp) AS latest_ts FROM market_data_points "
+            f"WHERE provider = %s AND interval = '1m' AND symbol = %s"
+            for _ in SYMBOLS
+        )
+        params = [val for s in SYMBOLS for val in (PROVIDER, s)]
         cur.execute(
-            """
-            SELECT date_trunc('day', min(latest_ts) + interval '1 minute')
-            FROM (
-              SELECT symbol, max(timestamp) AS latest_ts
-              FROM market_data_points
-              WHERE provider = %s AND interval = '1m' AND symbol = ANY(%s)
-              GROUP BY symbol
-            ) latest
-            """,
-            (PROVIDER, SYMBOLS),
+            f"SELECT date_trunc('day', min(latest_ts) + interval '1 minute') FROM ({union_sql}) latest",
+            params,
         )
         value = cur.fetchone()[0]
     if value is None:
