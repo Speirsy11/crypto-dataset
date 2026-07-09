@@ -19,6 +19,9 @@ import pyarrow.parquet as pq
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 MANIFEST_PATH = ROOT / "metadata" / "manifest.json"
+README_PATH = ROOT / "README.md"
+README_STATS_START = "<!-- AUTO-STATS START -->"
+README_STATS_END = "<!-- AUTO-STATS END -->"
 DEFAULT_DATABASE_URL = "postgresql://signal:signal@localhost:5544/signal_harvester"
 PROVIDER = "binance"
 SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "TRXUSDT", "DOGEUSDT", "ZECUSDT", "ADAUSDT", "BCHUSDT"]
@@ -176,6 +179,108 @@ def write_manifest(cutoff: datetime, bounds: dict[str, datetime]) -> None:
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2) + "\n")
 
 
+
+
+def _count_parquet_file_stats() -> dict:
+    """Scan Parquet file footers for dataset statistics (footers only — no data loaded)."""
+    if not DATA_DIR.exists():
+        return {"total_files": 0, "total_1m_rows": 0, "per_symbol_1m": {}}
+    total_files = 0
+    total_1m_rows = 0
+    per_symbol_1m: dict[str, int] = {}
+    for interval_dir in sorted(DATA_DIR.iterdir()):
+        if not interval_dir.is_dir():
+            continue
+        interval = interval_dir.name.removeprefix("interval_id=")
+        for symbol_dir in sorted(interval_dir.iterdir()):
+            if not symbol_dir.is_dir():
+                continue
+            symbol = symbol_dir.name.removeprefix("symbol_id=")
+            sym_1m = 0
+            for pq_file in symbol_dir.rglob("*.parquet"):
+                total_files += 1
+                num_rows = pq.read_metadata(pq_file).num_rows
+                if interval == "1m":
+                    sym_1m += num_rows
+            if interval == "1m":
+                total_1m_rows += sym_1m
+                per_symbol_1m[symbol] = sym_1m
+    return {"total_files": total_files, "total_1m_rows": total_1m_rows, "per_symbol_1m": per_symbol_1m}
+
+
+def _latest_day_1m_stats(day: date) -> dict:
+    """Count 1m rows for a specific UTC day across all symbols."""
+    month_start = datetime(day.year, day.month, 1, tzinfo=timezone.utc)
+    day_start = datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
+    day_end = day_start + timedelta(days=1)
+    rows = 0
+    files_touched = 0
+    for symbol in SYMBOLS:
+        path = parquet_path(symbol, "1m", Month(month_start))
+        if not path.exists():
+            continue
+        table = pq.read_table(path, filters=[
+            ("timestamp", ">=", day_start),
+            ("timestamp", "<", day_end),
+        ])
+        rows += table.num_rows
+        files_touched += 1
+    return {"1m_rows": rows, "files_touched": files_touched}
+
+
+def update_readme_stats() -> None:
+    """Regenerate the auto-stats section of README.md from Parquet file footers and the manifest."""
+    manifest = read_manifest()
+    file_stats = _count_parquet_file_stats()
+    last_day_str = manifest.get("last_complete_day_utc", "")
+    latest_day_counts = {"1m_rows": 0, "files_touched": 0}
+    if last_day_str:
+        latest_day_counts = _latest_day_1m_stats(date.fromisoformat(last_day_str))
+    start_times = manifest.get("symbol_start_times", {})
+    earliest = min(start_times.values())[:10] if start_times else "N/A"
+    per_sym = file_stats["per_symbol_1m"]
+    symbol_rows = "\n".join(
+        f"| {symbol} | {per_sym.get(symbol, 0):,} | {start_times.get(symbol, '')[:10] or 'N/A'} |"
+        for symbol in SYMBOLS
+    )
+    stats_block = f"""{README_STATS_START}
+## Dataset Stats
+
+_Auto-generated on each publish — do not edit manually._
+
+**Last generated:** {manifest.get("generated_at", "N/A")}
+**Latest complete UTC day:** {last_day_str or "N/A"}
+**Coverage:** {earliest} → {last_day_str or "N/A"}
+
+| Metric | Value |
+|--------|-------|
+| Symbols | {len(SYMBOLS)} |
+| Intervals | {len(INTERVALS)} |
+| Parquet files | {file_stats["total_files"]:,} |
+| Total 1m candles | {file_stats["total_1m_rows"]:,} |
+
+**Per-symbol 1m candle counts:**
+
+| Symbol | Candles | Earliest |
+|--------|---------|----------|
+{symbol_rows}
+
+**Latest day ({last_day_str or "N/A"}):**
+
+| Metric | Value |
+|--------|-------|
+| 1m candles | {latest_day_counts["1m_rows"]:,} |
+| Files updated | {latest_day_counts["files_touched"]} |
+{README_STATS_END}
+"""
+    text = README_PATH.read_text() if README_PATH.exists() else ""
+    if README_STATS_START in text and README_STATS_END in text:
+        before = text[:text.index(README_STATS_START)]
+        after = text[text.index(README_STATS_END) + len(README_STATS_END):]
+        README_PATH.write_text(before + stats_block + after)
+    else:
+        README_PATH.write_text(text.rstrip() + "\n\n" + stats_block)
+
 def export_1m_partition(conn, symbol: str, month: Month, cutoff: datetime) -> bool:
     start = month.start
     end = min(month.end, cutoff)
@@ -294,6 +399,7 @@ def publish_latest_day() -> None:
     # Rebuild a conservative window so 1w/1mo aggregates closing after the new day are refreshed too.
     changed_since = (previous_cutoff - timedelta(days=40)) if previous_cutoff else None
     build_dataset(cutoff, changed_since=changed_since)
+    update_readme_stats()
     commit_and_push(f"Update crypto dataset through {(cutoff - timedelta(days=1)).date().isoformat()}")
 
 
@@ -312,6 +418,7 @@ def main() -> int:
         cutoff = parse_utc(args.cutoff_utc)
         build_dataset(cutoff)
         if args.commit:
+            update_readme_stats()
             commit_and_push(f"Build crypto dataset through {(cutoff - timedelta(days=1)).date().isoformat()}")
     else:
         publish_latest_day()
