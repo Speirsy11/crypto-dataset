@@ -104,39 +104,40 @@ News and macro sentiment data now lives separately in
 
 _Auto-generated on each publish — do not edit manually._
 
-**Last generated:** 2026-10-07T23:33:04.922279Z
-**Latest complete UTC day:** 2026-10-06
-**Coverage:** 2017-08-17 → 2026-10-06
+**Last generated:** 2026-10-08T23:23:35.899963Z
+**Latest complete UTC day:** 2026-10-07
+**Coverage:** 2017-08-17 → 2026-10-07
 
 | Metric | Value |
 |--------|-------|
 | Symbols | 10 |
 | Intervals | 8 |
 | Parquet files | 7,780 |
-| Total 1m candles | 42,053,983 |
+| Total 1m candles | 42,068,373 |
 
 **Per-symbol 1m candle counts:**
 
 | Symbol | Candles | Earliest |
 |--------|---------|----------|
-| BTCUSDT | 4,788,967 | 2017-08-17 |
-| ETHUSDT | 4,788,971 | 2017-08-17 |
-| SOLUSDT | 3,226,442 | 2020-08-11 |
-| BNBUSDT | 4,672,603 | 2017-11-06 |
-| XRPUSDT | 4,416,888 | 2018-05-04 |
-| TRXUSDT | 4,361,968 | 2018-06-11 |
-| DOGEUSDT | 3,804,586 | 2019-07-05 |
-| ZECUSDT | 3,956,812 | 2019-03-21 |
-| ADAUSDT | 4,441,775 | 2018-04-17 |
-| BCHUSDT | 3,594,971 | 2019-11-28 |
+| BTCUSDT | 4,790,406 | 2017-08-17 |
+| ETHUSDT | 4,790,410 | 2017-08-17 |
+| SOLUSDT | 3,227,881 | 2020-08-11 |
+| BNBUSDT | 4,674,042 | 2017-11-06 |
+| XRPUSDT | 4,418,327 | 2018-05-04 |
+| TRXUSDT | 4,363,407 | 2018-06-11 |
+| DOGEUSDT | 3,806,025 | 2019-07-05 |
+| ZECUSDT | 3,958,251 | 2019-03-21 |
+| ADAUSDT | 4,443,214 | 2018-04-17 |
+| BCHUSDT | 3,596,410 | 2019-11-28 |
 
-**Latest day (2026-10-06):**
+**Latest day (2026-10-07):**
 
 | Metric | Value |
 |--------|-------|
-| 1m candles | 14,400 |
+| 1m candles | 14,390 |
 | Files updated | 10 |
 <!-- AUTO-STATS END -->
+
 
 
 
